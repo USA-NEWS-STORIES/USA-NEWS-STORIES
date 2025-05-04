@@ -1,0 +1,756 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>USA News Stories - Android App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#4f46e5" />
+  <meta name="description" content="Track your daily tasks and earn credits with USA News Stories Android App. Manage tasks, mark completion, and monitor your progress with timers and summaries." />
+  <meta name="keywords" content="task management, credits, daily tasks, USA News Stories, productivity, Android app" />
+  <meta name="author" content="USA News Stories" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: contain;
+      margin: 0;
+      background-color: #f9fafb;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
+      border: 1px solid #d1d5db;
+      border-radius: 0.5rem;
+      box-shadow: 0 0 10px rgb(0 0 0 / 0.1);
+    }
+    main {
+      flex-grow: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 1rem;
+    }
+    /* Scrollbar for Android */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: rgba(99, 102, 241, 0.6);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    /* Hide focus outline except keyboard navigation */
+    :focus:not(:focus-visible) {
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="bg-indigo-700 text-white p-4 shadow-md flex items-center justify-between sticky top-0 z-10" role="banner">
+    <h1 class="text-xl font-bold leading-tight" tabindex="0">USA NEWS STORIES</h1>
+    <button
+      id="resetHistoryBtn"
+      class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-1 rounded flex items-center gap-1 justify-center text-xs focus:outline-none focus:ring-2 focus:ring-red-400"
+      title="Reset all history and tasks"
+      type="button"
+      aria-label="Reset all history and tasks"
+    >
+      <i class="fas fa-trash-alt" aria-hidden="true"></i>
+    </button>
+  </header>
+
+  <main class="p-4" role="main">
+    <section class="mb-6 bg-white rounded-lg shadow p-4" aria-labelledby="addTaskHeading">
+      <h2 id="addTaskHeading" class="text-base font-semibold mb-3">Add New Task</h2>
+      <form id="taskForm" class="flex flex-col gap-3" novalidate>
+        <input
+          type="text"
+          id="taskName"
+          placeholder="Task name"
+          required
+          maxlength="50"
+          class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+          autocomplete="off"
+          aria-label="Task name"
+          aria-required="true"
+        />
+        <select
+          id="taskCredit"
+          required
+          class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+          aria-label="Select credits"
+          aria-required="true"
+        >
+          <option value="" disabled selected>Credits</option>
+          <option value="5">5</option>
+          <option value="10">10</option>
+          <option value="15">15</option>
+          <option value="20">20</option>
+          <option value="25">25</option>
+          <option value="30">30</option>
+          <option value="35">35</option>
+          <option value="40">40</option>
+          <option value="45">45</option>
+          <option value="50">50</option>
+        </select>
+        <button
+          type="submit"
+          class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition flex items-center gap-2 justify-center text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          aria-label="Add task"
+        >
+          <i class="fas fa-plus" aria-hidden="true"></i> Add Task
+        </button>
+      </form>
+      <p class="mt-2 text-xs text-gray-600" aria-live="polite">
+        * You can add only one task with 50 credits.
+      </p>
+    </section>
+
+    <section class="mb-6 bg-white rounded-lg shadow p-4" aria-labelledby="todaysTasksHeading">
+      <h2 id="todaysTasksHeading" class="text-base font-semibold mb-3">Today's Tasks</h2>
+      <ul id="taskList" class="divide-y divide-gray-200 max-h-48 overflow-y-auto" tabindex="0" aria-label="Today's tasks list" role="list">
+      </ul>
+      <div class="mt-3 flex justify-between items-center text-gray-700 font-semibold text-sm" aria-live="polite">
+        <div>
+          Total Credits Assigned: <span id="totalCreditsAssigned">0</span>
+        </div>
+        <div>
+          Tasks Count: <span id="tasksCount">0</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="mb-6 bg-white rounded-lg shadow p-4" aria-labelledby="markCompletedHeading">
+      <h2 id="markCompletedHeading" class="text-base font-semibold mb-3">Mark Tasks Completed</h2>
+      <ul id="taskCompleteList" class="divide-y divide-gray-200 max-h-48 overflow-y-auto" tabindex="0" aria-label="Mark tasks completed list" role="list">
+      </ul>
+      <div class="mt-3 flex justify-between items-center text-gray-700 font-semibold text-sm">
+        <div>
+          Credits Earned Today: <span id="creditsEarnedToday">0</span> / <span id="creditsPossibleToday">0</span>
+        </div>
+        <button
+          id="startJourneyBtn"
+          class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition flex items-center gap-1 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+          title="Start your journey and begin timers"
+          type="button"
+          aria-label="Start your journey and begin timers"
+        >
+          <i class="fas fa-play-circle" aria-hidden="true"></i> Start Your Journey
+        </button>
+      </div>
+      <div class="mt-4 flex justify-center flex-col gap-2">
+        <button
+          id="completeAllBtn"
+          class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition flex items-center gap-2 text-sm hidden focus:outline-none focus:ring-2 focus:ring-blue-400"
+          aria-label="Complete all tasks"
+          type="button"
+        >
+          <i class="fas fa-check-double" aria-hidden="true"></i> Complete All Tasks
+        </button>
+        <button
+          id="confirmCompletionBtn"
+          class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition flex items-center gap-2 text-sm hidden opacity-50 cursor-not-allowed focus:outline-none"
+          aria-label="Confirm task completion"
+          type="button"
+          disabled
+          title="Start your journey to enable this button"
+        >
+          <i class="fas fa-check-circle" aria-hidden="true"></i> Confirm Completion
+        </button>
+      </div>
+    </section>
+
+    <section class="mb-6 bg-white rounded-lg shadow p-4" aria-labelledby="creditSummaryHeading">
+      <h2 id="creditSummaryHeading" class="text-base font-semibold mb-3">Credit Summary</h2>
+      <div class="grid grid-cols-2 gap-3 text-center text-gray-800 font-semibold text-xs">
+        <div class="bg-indigo-100 rounded p-3" role="region" aria-label="Credits earned today">
+          <div class="text-2xl" id="dailyCreditsEarned">0</div>
+          <div class="mt-1">Credits Earned Today</div>
+          <div class="mt-1 text-gray-600" id="dailyCreditsPossible">/ 0 possible</div>
+        </div>
+        <div class="bg-indigo-100 rounded p-3" role="region" aria-label="Credits earned this week">
+          <div class="text-2xl" id="weeklyCreditsEarned">0</div>
+          <div class="mt-1">Credits Earned This Week</div>
+          <div class="mt-1 text-gray-600" id="weeklyCreditsPossible">/ 0 possible</div>
+        </div>
+        <div class="bg-indigo-100 rounded p-3" role="region" aria-label="Credits earned this month">
+          <div class="text-2xl" id="monthlyCreditsEarned">0</div>
+          <div class="mt-1">Credits Earned This Month</div>
+          <div class="mt-1 text-gray-600" id="monthlyCreditsPossible">/ 0 possible</div>
+        </div>
+        <div class="bg-indigo-100 rounded p-3" role="region" aria-label="Credits earned this year">
+          <div class="text-2xl" id="yearlyCreditsEarned">0</div>
+          <div class="mt-1">Credits Earned This Year</div>
+          <div class="mt-1 text-gray-600" id="yearlyCreditsPossible">/ 0 possible</div>
+        </div>
+        <div class="col-span-2 bg-indigo-100 rounded p-3" role="region" aria-label="Total credits earned till now">
+          <div class="text-2xl" id="totalCreditsEarned">0</div>
+          <div class="mt-1">Credits Earned Till Now</div>
+          <div class="mt-1 text-gray-600" id="daysPassed">0 days passed</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mb-6 bg-white rounded-lg shadow p-4" aria-labelledby="timerResetHeading">
+      <h2 id="timerResetHeading" class="text-base font-semibold mb-3">Timer & Next Reset</h2>
+      <div class="grid grid-cols-2 gap-3 text-center text-gray-700 font-medium text-xs">
+        <div class="bg-gray-100 rounded p-3" role="region" aria-label="Next daily reset timer">
+          <div class="text-lg" id="dailyTimer" aria-live="polite" aria-atomic="true">--:--:--</div>
+          <div class="mt-1">Next Daily Reset</div>
+        </div>
+        <div class="bg-gray-100 rounded p-3" role="region" aria-label="Next weekly reset timer">
+          <div class="text-lg" id="weeklyTimer" aria-live="polite" aria-atomic="true">--:--:--</div>
+          <div class="mt-1">Next Weekly Reset</div>
+        </div>
+        <div class="bg-gray-100 rounded p-3" role="region" aria-label="Next monthly reset timer">
+          <div class="text-lg" id="monthlyTimer" aria-live="polite" aria-atomic="true">--:--:--</div>
+          <div class="mt-1">Next Monthly Reset</div>
+        </div>
+        <div class="bg-gray-100 rounded p-3 col-span-2" role="region" aria-label="Next yearly reset timer">
+          <div class="text-lg" id="yearlyTimer" aria-live="polite" aria-atomic="true">--:--:--</div>
+          <div class="mt-1">Next Yearly Reset</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bg-indigo-700 text-white p-3 text-center text-xs select-none" role="contentinfo">
+    &copy; USA News Stories
+  </footer>
+
+  <script>
+    // Utility functions
+    function formatTime(ms) {
+      if (ms < 0) ms = 0;
+      const totalSeconds = Math.floor(ms / 1000);
+      const hours = Math.floor(totalSeconds / 3600)
+        .toString()
+        .padStart(2, "0");
+      const minutes = Math.floor((totalSeconds % 3600) / 60)
+        .toString()
+        .padStart(2, "0");
+      const seconds = (totalSeconds % 60).toString().padStart(2, "0");
+      return `${hours}:${minutes}:${seconds}`;
+    }
+
+    function escapeHtml(text) {
+      return text.replace(/[&<>"']/g, function(m) {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[m];
+      });
+    }
+
+    // Global state
+    let tasks = [];
+    let dailyHistory = [];
+    let weeklyHistory = [];
+    let monthlyHistory = [];
+    let yearlyHistory = [];
+
+    let currentDayKey = null;
+    let currentWeekKey = null;
+    let currentMonthKey = null;
+    let currentYearKey = null;
+
+    let dailyResetTime = null;
+    let weeklyResetTime = null;
+    let monthlyResetTime = null;
+    let yearlyResetTime = null;
+
+    let journeyStarted = false;
+    let journeyStartTime = null;
+
+    // Elements
+    const taskForm = document.getElementById("taskForm");
+    const taskNameInput = document.getElementById("taskName");
+    const taskCreditSelect = document.getElementById("taskCredit");
+    const taskList = document.getElementById("taskList");
+    const taskCompleteList = document.getElementById("taskCompleteList");
+    const totalCreditsAssignedEl = document.getElementById("totalCreditsAssigned");
+    const tasksCountEl = document.getElementById("tasksCount");
+    const creditsEarnedTodayEl = document.getElementById("creditsEarnedToday");
+    const creditsPossibleTodayEl = document.getElementById("creditsPossibleToday");
+    const startJourneyBtn = document.getElementById("startJourneyBtn");
+    const weeklyCreditsEarnedEl = document.getElementById("weeklyCreditsEarned");
+    const weeklyCreditsPossibleEl = document.getElementById("weeklyCreditsPossible");
+    const monthlyCreditsEarnedEl = document.getElementById("monthlyCreditsEarned");
+    const monthlyCreditsPossibleEl = document.getElementById("monthlyCreditsPossible");
+    const yearlyCreditsEarnedEl = document.getElementById("yearlyCreditsEarned");
+    const yearlyCreditsPossibleEl = document.getElementById("yearlyCreditsPossible");
+    const dailyCreditsEarnedEl = document.getElementById("dailyCreditsEarned");
+    const dailyCreditsPossibleEl = document.getElementById("dailyCreditsPossible");
+    const totalCreditsEarnedEl = document.getElementById("totalCreditsEarned");
+    const daysPassedEl = document.getElementById("daysPassed");
+    const dailyTimerEl = document.getElementById("dailyTimer");
+    const weeklyTimerEl = document.getElementById("weeklyTimer");
+    const monthlyTimerEl = document.getElementById("monthlyTimer");
+    const yearlyTimerEl = document.getElementById("yearlyTimer");
+    const resetHistoryBtn = document.getElementById("resetHistoryBtn");
+    const completeAllBtn = document.getElementById("completeAllBtn");
+    const confirmCompletionBtn = document.getElementById("confirmCompletionBtn");
+
+    // Initialize on load
+    window.addEventListener("load", () => {
+      loadData();
+      renderAll();
+      setInterval(() => {
+        if (journeyStarted) {
+          updateTimers();
+          checkAndPerformResets();
+        } else {
+          setTimersToPlaceholder();
+        }
+      }, 1000);
+    });
+
+    // Load data from localStorage
+    function loadData() {
+      tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+      dailyHistory = JSON.parse(localStorage.getItem("dailyHistory")) || [];
+      weeklyHistory = JSON.parse(localStorage.getItem("weeklyHistory")) || [];
+      monthlyHistory = JSON.parse(localStorage.getItem("monthlyHistory")) || [];
+      yearlyHistory = JSON.parse(localStorage.getItem("yearlyHistory")) || [];
+
+      journeyStarted = JSON.parse(localStorage.getItem("journeyStarted")) || false;
+      journeyStartTime = localStorage.getItem("journeyStartTime") ? new Date(localStorage.getItem("journeyStartTime")) : null;
+
+      if (journeyStarted && journeyStartTime) {
+        initializeResetTimes(journeyStartTime);
+      } else {
+        dailyResetTime = null;
+        weeklyResetTime = null;
+        monthlyResetTime = null;
+        yearlyResetTime = null;
+      }
+
+      const now = new Date();
+      currentDayKey = formatDate(now);
+      currentWeekKey = formatWeekKey(now);
+      currentMonthKey = formatMonthKey(now);
+      currentYearKey = formatYearKey(now);
+
+      renderStartButton();
+    }
+
+    // Initialize reset times based on journey start time
+    function initializeResetTimes(startTime) {
+      dailyResetTime = new Date(startTime.getTime() + 24 * 60 * 60 * 1000);
+      weeklyResetTime = new Date(startTime.getTime() + 7 * 24 * 60 * 60 * 1000);
+      monthlyResetTime = new Date(startTime);
+      monthlyResetTime.setMonth(monthlyResetTime.getMonth() + 1);
+      yearlyResetTime = new Date(startTime);
+      yearlyResetTime.setFullYear(yearlyResetTime.getFullYear() + 1);
+    }
+
+    // Save data to localStorage
+    function saveData() {
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+      localStorage.setItem("dailyHistory", JSON.stringify(dailyHistory));
+      localStorage.setItem("weeklyHistory", JSON.stringify(weeklyHistory));
+      localStorage.setItem("monthlyHistory", JSON.stringify(monthlyHistory));
+      localStorage.setItem("yearlyHistory", JSON.stringify(yearlyHistory));
+      localStorage.setItem("journeyStarted", JSON.stringify(journeyStarted));
+      if (journeyStartTime) {
+        localStorage.setItem("journeyStartTime", journeyStartTime.toISOString());
+      } else {
+        localStorage.removeItem("journeyStartTime");
+      }
+    }
+
+    // Format date as yyyy-mm-dd
+    function formatDate(date) {
+      return date.toISOString().slice(0, 10);
+    }
+
+    // Format week key as yyyy-Www (ISO week)
+    function formatWeekKey(date) {
+      const target = new Date(date.valueOf());
+      const dayNr = (date.getDay() + 6) % 7;
+      target.setDate(target.getDate() - dayNr + 3);
+      const firstThursday = target.valueOf();
+      target.setMonth(0, 1);
+      if (target.getDay() !== 4) {
+        target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
+      }
+      const weekNumber = 1 + Math.ceil((firstThursday - target) / 604800000);
+      return `${date.getFullYear()}-W${weekNumber.toString().padStart(2, "0")}`;
+    }
+
+    // Format month key as yyyy-mm
+    function formatMonthKey(date) {
+      return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, "0")}`;
+    }
+
+    // Format year key as yyyy
+    function formatYearKey(date) {
+      return `${date.getFullYear()}`;
+    }
+
+    // Render all UI parts
+    function renderAll() {
+      renderTaskList();
+      renderTaskCompleteList();
+      updateSummary();
+      checkCompleteAllButtonVisibility();
+      updateConfirmCompletionButtonState();
+    }
+
+    // Render task list (for adding tasks)
+    function renderTaskList() {
+      taskList.innerHTML = "";
+      tasks.forEach((task) => {
+        const li = document.createElement("li");
+        li.className = "py-2 flex justify-between items-center text-sm";
+        li.innerHTML = `
+          <div class="flex-1 flex items-center gap-2">
+            <span class="font-semibold ${task.completed ? 'line-through text-gray-400' : ''}" id="task-name-${task.id}">${escapeHtml(task.name)}</span> 
+            <span class="text-gray-500">(${task.credit} credits)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button aria-label="Rename task '${escapeHtml(task.name)}'" class="rename-btn text-indigo-600 hover:text-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 rounded" data-id="${task.id}" type="button">
+              <i class="fas fa-edit" aria-hidden="true"></i>
+            </button>
+            <button aria-label="Delete task '${escapeHtml(task.name)}'" class="delete-btn text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-400 rounded" data-id="${task.id}" type="button">
+              <i class="fas fa-trash-alt" aria-hidden="true"></i>
+            </button>
+          </div>
+        `;
+        taskList.appendChild(li);
+      });
+      totalCreditsAssignedEl.textContent = tasks.reduce((a, t) => a + t.credit, 0);
+      tasksCountEl.textContent = tasks.length;
+
+      // Attach rename and delete handlers
+      document.querySelectorAll(".rename-btn").forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.getAttribute("data-id");
+          const task = tasks.find(t => t.id === id);
+          if (!task) return;
+          const newName = prompt("Rename task:", task.name);
+          if (newName !== null) {
+            const trimmed = newName.trim();
+            if (trimmed.length > 0) {
+              task.name = trimmed;
+              saveData();
+              renderAll();
+            }
+          }
+        };
+      });
+      document.querySelectorAll(".delete-btn").forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.getAttribute("data-id");
+          const index = tasks.findIndex(t => t.id === id);
+          if (index !== -1) {
+            tasks.splice(index, 1);
+            saveData();
+            renderAll();
+          }
+        };
+      });
+    }
+
+    // Render task complete list (for marking completed)
+    function renderTaskCompleteList() {
+      taskCompleteList.innerHTML = "";
+      tasks.forEach((task) => {
+        const li = document.createElement("li");
+        li.className = "py-2 flex items-center gap-3 text-sm";
+        li.innerHTML = `
+          <input type="checkbox" id="complete-${task.id}" data-id="${task.id}" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded" ${task.completed ? "checked" : ""} />
+          <label for="complete-${task.id}" class="${task.completed ? 'line-through text-gray-400' : ''} flex-1 cursor-pointer">${escapeHtml(task.name)} (${task.credit} credits)</label>
+        `;
+        taskCompleteList.appendChild(li);
+      });
+
+      // Attach checkbox handlers
+      document.querySelectorAll("#taskCompleteList input[type=checkbox]").forEach(checkbox => {
+        checkbox.onchange = () => {
+          const id = checkbox.getAttribute("data-id");
+          const task = tasks.find(t => t.id === id);
+          if (!task) return;
+          task.completed = checkbox.checked;
+          saveData();
+          renderAll();
+        };
+      });
+    }
+
+    // Update summary info
+    function updateSummary() {
+      // Calculate credits earned today and possible today
+      const creditsEarnedToday = tasks.filter(t => t.completed).reduce((a, t) => a + t.credit, 0);
+      const creditsPossibleToday = tasks.reduce((a, t) => a + t.credit, 0);
+      creditsEarnedTodayEl.textContent = creditsEarnedToday;
+      creditsPossibleTodayEl.textContent = creditsPossibleToday;
+
+      // Weekly
+      const weeklyEarned = weeklyHistory.reduce((a, h) => a + h.creditsEarned, 0);
+      const weeklyPossible = weeklyHistory.reduce((a, h) => a + h.creditsPossible, 0);
+      weeklyCreditsEarnedEl.textContent = weeklyEarned;
+      weeklyCreditsPossibleEl.textContent = weeklyPossible;
+
+      // Monthly
+      const monthlyEarned = monthlyHistory.reduce((a, h) => a + h.creditsEarned, 0);
+      const monthlyPossible = monthlyHistory.reduce((a, h) => a + h.creditsPossible, 0);
+      monthlyCreditsEarnedEl.textContent = monthlyEarned;
+      monthlyCreditsPossibleEl.textContent = monthlyPossible;
+
+      // Yearly
+      const yearlyEarned = yearlyHistory.reduce((a, h) => a + h.creditsEarned, 0);
+      const yearlyPossible = yearlyHistory.reduce((a, h) => a + h.creditsPossible, 0);
+      yearlyCreditsEarnedEl.textContent = yearlyEarned;
+      yearlyCreditsPossibleEl.textContent = yearlyPossible;
+
+      // Daily
+      const dailyEarned = dailyHistory.reduce((a, h) => a + h.creditsEarned, 0);
+      const dailyPossible = dailyHistory.reduce((a, h) => a + h.creditsPossible, 0);
+      dailyCreditsEarnedEl.textContent = dailyEarned;
+      dailyCreditsPossibleEl.textContent = dailyPossible;
+
+      // Total credits earned till now
+      const totalEarned = dailyEarned + weeklyEarned + monthlyEarned + yearlyEarned;
+      totalCreditsEarnedEl.textContent = totalEarned;
+
+      // Days passed since journey start
+      if (journeyStartTime) {
+        const now = new Date();
+        const diffDays = Math.floor((now - journeyStartTime) / (1000 * 60 * 60 * 24));
+        daysPassedEl.textContent = diffDays + " days passed";
+      } else {
+        daysPassedEl.textContent = "0 days passed";
+      }
+    }
+
+    // Check and toggle visibility of Complete All button
+    function checkCompleteAllButtonVisibility() {
+      if (tasks.length > 0 && journeyStarted) {
+        completeAllBtn.classList.remove("hidden");
+      } else {
+        completeAllBtn.classList.add("hidden");
+      }
+    }
+
+    // Update Confirm Completion button state
+    function updateConfirmCompletionButtonState() {
+      if (journeyStarted && tasks.some(t => t.completed)) {
+        confirmCompletionBtn.disabled = false;
+        confirmCompletionBtn.classList.remove("opacity-50", "cursor-not-allowed");
+        confirmCompletionBtn.classList.add("focus:outline-none", "focus:ring-2", "focus:ring-purple-400");
+        confirmCompletionBtn.classList.remove("hidden");
+      } else {
+        confirmCompletionBtn.disabled = true;
+        confirmCompletionBtn.classList.add("opacity-50", "cursor-not-allowed");
+        confirmCompletionBtn.classList.remove("focus:outline-none", "focus:ring-2", "focus:ring-purple-400");
+        confirmCompletionBtn.classList.add("hidden");
+      }
+    }
+
+    // Set timers to placeholder
+    function setTimersToPlaceholder() {
+      dailyTimerEl.textContent = "--:--:--";
+      weeklyTimerEl.textContent = "--:--:--";
+      monthlyTimerEl.textContent = "--:--:--";
+      yearlyTimerEl.textContent = "--:--:--";
+    }
+
+    // Update timers display
+    function updateTimers() {
+      const now = new Date();
+      dailyTimerEl.textContent = formatTime(dailyResetTime - now);
+      weeklyTimerEl.textContent = formatTime(weeklyResetTime - now);
+      monthlyTimerEl.textContent = formatTime(monthlyResetTime - now);
+      yearlyTimerEl.textContent = formatTime(yearlyResetTime - now);
+    }
+
+    // Check and perform resets if timers expired
+    function checkAndPerformResets() {
+      const now = new Date();
+      let resetOccurred = false;
+
+      if (dailyResetTime && now >= dailyResetTime) {
+        performDailyReset();
+        resetOccurred = true;
+      }
+      if (weeklyResetTime && now >= weeklyResetTime) {
+        performWeeklyReset();
+        resetOccurred = true;
+      }
+      if (monthlyResetTime && now >= monthlyResetTime) {
+        performMonthlyReset();
+        resetOccurred = true;
+      }
+      if (yearlyResetTime && now >= yearlyResetTime) {
+        performYearlyReset();
+        resetOccurred = true;
+      }
+
+      if (resetOccurred) {
+        saveData();
+        renderAll();
+      }
+    }
+
+    // Perform daily reset
+    function performDailyReset() {
+      // Save today's completed credits to dailyHistory
+      const creditsEarned = tasks.filter(t => t.completed).reduce((a, t) => a + t.credit, 0);
+      const creditsPossible = tasks.reduce((a, t) => a + t.credit, 0);
+      dailyHistory.push({ date: currentDayKey, creditsEarned, creditsPossible });
+      // Reset tasks completed status
+      tasks.forEach(t => t.completed = false);
+      // Update current day key
+      const now = new Date();
+      currentDayKey = formatDate(now);
+      // Update daily reset time
+      dailyResetTime = new Date(dailyResetTime.getTime() + 24 * 60 * 60 * 1000);
+    }
+
+    // Perform weekly reset
+    function performWeeklyReset() {
+      // Save weekly credits summary
+      const creditsEarned = dailyHistory.reduce((a, h) => a + h.creditsEarned, 0);
+      const creditsPossible = dailyHistory.reduce((a, h) => a + h.creditsPossible, 0);
+      weeklyHistory.push({ week: currentWeekKey, creditsEarned, creditsPossible });
+      // Clear dailyHistory for the week
+      dailyHistory = [];
+      // Update current week key
+      const now = new Date();
+      currentWeekKey = formatWeekKey(now);
+      // Update weekly reset time
+      weeklyResetTime = new Date(weeklyResetTime.getTime() + 7 * 24 * 60 * 60 * 1000);
+    }
+
+    // Perform monthly reset
+    function performMonthlyReset() {
+      // Save monthly credits summary
+      const creditsEarned = weeklyHistory.reduce((a, h) => a + h.creditsEarned, 0);
+      const creditsPossible = weeklyHistory.reduce((a, h) => a + h.creditsPossible, 0);
+      monthlyHistory.push({ month: currentMonthKey, creditsEarned, creditsPossible });
+      // Clear weeklyHistory for the month
+      weeklyHistory = [];
+      // Update current month key
+      const now = new Date();
+      currentMonthKey = formatMonthKey(now);
+      // Update monthly reset time
+      monthlyResetTime.setMonth(monthlyResetTime.getMonth() + 1);
+    }
+
+    // Perform yearly reset
+    function performYearlyReset() {
+      // Save yearly credits summary
+      const creditsEarned = monthlyHistory.reduce((a, h) => a + h.creditsEarned, 0);
+      const creditsPossible = monthlyHistory.reduce((a, h) => a + h.creditsPossible, 0);
+      yearlyHistory.push({ year: currentYearKey, creditsEarned, creditsPossible });
+      // Clear monthlyHistory for the year
+      monthlyHistory = [];
+      // Update current year key
+      const now = new Date();
+      currentYearKey = formatYearKey(now);
+      // Update yearly reset time
+      yearlyResetTime.setFullYear(yearlyResetTime.getFullYear() + 1);
+    }
+
+    // Render start journey button state
+    function renderStartButton() {
+      if (journeyStarted) {
+        startJourneyBtn.disabled = true;
+        startJourneyBtn.classList.add("opacity-50", "cursor-not-allowed");
+        startJourneyBtn.title = "Journey already started";
+      } else {
+        startJourneyBtn.disabled = false;
+        startJourneyBtn.classList.remove("opacity-50", "cursor-not-allowed");
+        startJourneyBtn.title = "Start your journey and begin timers";
+      }
+    }
+
+    // Event listeners
+    taskForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = taskNameInput.value.trim();
+      const credit = parseInt(taskCreditSelect.value, 10);
+      if (!name || isNaN(credit)) return;
+
+      // Check if a task with 50 credits already exists
+      if (credit === 50 && tasks.some(t => t.credit === 50)) {
+        alert("You can add only one task with 50 credits.");
+        return;
+      }
+
+      // Create new task with unique id
+      const id = Date.now().toString() + Math.random().toString(36).slice(2);
+      tasks.push({ id, name, credit, completed: false });
+      saveData();
+      renderAll();
+      taskForm.reset();
+      taskNameInput.focus();
+    });
+
+    startJourneyBtn.addEventListener("click", () => {
+      if (journeyStarted) return;
+      journeyStarted = true;
+      journeyStartTime = new Date();
+      initializeResetTimes(journeyStartTime);
+      saveData();
+      renderStartButton();
+      renderAll();
+    });
+
+    completeAllBtn.addEventListener("click", () => {
+      tasks.forEach(t => t.completed = true);
+      saveData();
+      renderAll();
+    });
+
+    confirmCompletionBtn.addEventListener("click", () => {
+      if (!journeyStarted) return;
+      // Confirm completion means saving today's completed tasks to dailyHistory and resetting completed status
+      const creditsEarned = tasks.filter(t => t.completed).reduce((a, t) => a + t.credit, 0);
+      const creditsPossible = tasks.reduce((a, t) => a + t.credit, 0);
+      dailyHistory.push({ date: currentDayKey, creditsEarned, creditsPossible });
+      tasks.forEach(t => t.completed = false);
+      saveData();
+      renderAll();
+      alert("Task completion confirmed and recorded for today.");
+    });
+
+    resetHistoryBtn.addEventListener("click", () => {
+      if (confirm("Are you sure you want to reset all history and tasks? This action cannot be undone.")) {
+        tasks = [];
+        dailyHistory = [];
+        weeklyHistory = [];
+        monthlyHistory = [];
+        yearlyHistory = [];
+        journeyStarted = false;
+        journeyStartTime = null;
+        dailyResetTime = null;
+        weeklyResetTime = null;
+        monthlyResetTime = null;
+        yearlyResetTime = null;
+        saveData();
+        renderStartButton();
+        renderAll();
+      }
+    });
+  </script>
+</body>
+</html>
