@@ -1,0 +1,777 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>USA News Stories - Android App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#4f46e5" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: contain;
+      margin: 0;
+      background-color: #f9fafb;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
+      border: 1px solid #d1d5db;
+      border-radius: 0.5rem;
+      box-shadow: 0 0 10px rgb(0 0 0 / 0.1);
+    }
+    main {
+      flex-grow: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 1rem;
+    }
+    /* Scrollbar for Android */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: rgba(99, 102, 241, 0.6);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    /* Hide focus outline except keyboard navigation */
+    :focus:not(:focus-visible) {
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="bg-indigo-700 text-white p-4 shadow-md flex items-center justify-between sticky top-0 z-10">
+    <h1 class="text-xl font-bold leading-tight">USA NEWS STORIES</h1>
+    <button
+      id="resetHistoryBtn"
+      class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-1 rounded flex items-center gap-1 justify-center text-xs"
+      title="Reset all history and tasks"
+      type="button"
+      aria-label="Reset all history and tasks"
+    >
+      <i class="fas fa-trash-alt"></i>
+    </button>
+  </header>
+
+  <main class="p-4">
+    <section class="mb-6 bg-white rounded-lg shadow p-4">
+      <h2 class="text-base font-semibold mb-3">Add New Task</h2>
+      <form id="taskForm" class="flex flex-col gap-3" novalidate>
+        <input
+          type="text"
+          id="taskName"
+          placeholder="Task name"
+          required
+          maxlength="50"
+          class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+          autocomplete="off"
+          aria-label="Task name"
+        />
+        <select
+          id="taskCredit"
+          required
+          class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+          aria-label="Select credits"
+        >
+          <option value="" disabled selected>Credits</option>
+          <option value="5">5</option>
+          <option value="10">10</option>
+          <option value="15">15</option>
+          <option value="20">20</option>
+          <option value="25">25</option>
+          <option value="30">30</option>
+          <option value="35">35</option>
+          <option value="40">40</option>
+          <option value="45">45</option>
+          <option value="50">50</option>
+        </select>
+        <button
+          type="submit"
+          class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition flex items-center gap-2 justify-center text-sm"
+          aria-label="Add task"
+        >
+          <i class="fas fa-plus"></i> Add Task
+        </button>
+      </form>
+      <p class="mt-2 text-xs text-gray-600">
+        * You can add only one task with 50 credits.
+      </p>
+    </section>
+
+    <section class="mb-6 bg-white rounded-lg shadow p-4">
+      <h2 class="text-base font-semibold mb-3">Today's Tasks</h2>
+      <ul id="taskList" class="divide-y divide-gray-200 max-h-48 overflow-y-auto" tabindex="0" aria-label="Today's tasks list" role="list">
+      </ul>
+      <div class="mt-3 flex justify-between items-center text-gray-700 font-semibold text-sm">
+        <div>
+          Total Credits Assigned: <span id="totalCreditsAssigned">0</span>
+        </div>
+        <div>
+          Tasks Count: <span id="tasksCount">0</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="mb-6 bg-white rounded-lg shadow p-4">
+      <h2 class="text-base font-semibold mb-3">Mark Tasks Completed</h2>
+      <ul id="taskCompleteList" class="divide-y divide-gray-200 max-h-48 overflow-y-auto" tabindex="0" aria-label="Mark tasks completed list" role="list">
+      </ul>
+      <div class="mt-3 flex justify-between items-center text-gray-700 font-semibold text-sm">
+        <div>
+          Credits Earned Today: <span id="creditsEarnedToday">0</span> / <span id="creditsPossibleToday">0</span>
+        </div>
+        <button
+          id="endDayBtn"
+          class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition flex items-center gap-1 text-sm"
+          title="End day and save today's credits"
+          type="button"
+          aria-label="End day and save today's credits"
+        >
+          <i class="fas fa-check-circle"></i> End Day
+        </button>
+      </div>
+    </section>
+
+    <section class="mb-6 bg-white rounded-lg shadow p-4">
+      <h2 class="text-base font-semibold mb-3">Credit Summary</h2>
+      <div class="grid grid-cols-2 gap-3 text-center text-gray-800 font-semibold text-xs">
+        <div class="bg-indigo-100 rounded p-3">
+          <div class="text-2xl" id="dailyCreditsEarned">0</div>
+          <div class="mt-1">Credits Earned Today</div>
+          <div class="mt-1 text-gray-600" id="dailyCreditsPossible">/ 0 possible</div>
+        </div>
+        <div class="bg-indigo-100 rounded p-3">
+          <div class="text-2xl" id="weeklyCreditsEarned">0</div>
+          <div class="mt-1">Credits Earned This Week</div>
+          <div class="mt-1 text-gray-600" id="weeklyCreditsPossible">/ 0 possible</div>
+        </div>
+        <div class="bg-indigo-100 rounded p-3">
+          <div class="text-2xl" id="monthlyCreditsEarned">0</div>
+          <div class="mt-1">Credits Earned This Month</div>
+          <div class="mt-1 text-gray-600" id="monthlyCreditsPossible">/ 0 possible</div>
+        </div>
+        <div class="bg-indigo-100 rounded p-3">
+          <div class="text-2xl" id="yearlyCreditsEarned">0</div>
+          <div class="mt-1">Credits Earned This Year</div>
+          <div class="mt-1 text-gray-600" id="yearlyCreditsPossible">/ 0 possible</div>
+        </div>
+        <div class="col-span-2 bg-indigo-100 rounded p-3">
+          <div class="text-2xl" id="totalCreditsEarned">0</div>
+          <div class="mt-1">Credits Earned Till Now</div>
+          <div class="mt-1 text-gray-600" id="daysPassed">0 days passed</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mb-6 bg-white rounded-lg shadow p-4">
+      <h2 class="text-base font-semibold mb-3">Timer & Next Reset</h2>
+      <div class="grid grid-cols-2 gap-3 text-center text-gray-700 font-medium text-xs">
+        <div class="bg-gray-100 rounded p-3">
+          <div class="text-lg" id="dailyTimer">--:--:--</div>
+          <div class="mt-1">Next Daily Reset</div>
+        </div>
+        <div class="bg-gray-100 rounded p-3">
+          <div class="text-lg" id="weeklyTimer">--:--:--</div>
+          <div class="mt-1">Next Weekly Reset</div>
+        </div>
+        <div class="bg-gray-100 rounded p-3">
+          <div class="text-lg" id="monthlyTimer">--:--:--</div>
+          <div class="mt-1">Next Monthly Reset</div>
+        </div>
+        <div class="bg-gray-100 rounded p-3 col-span-2">
+          <div class="text-lg" id="yearlyTimer">--:--:--</div>
+          <div class="mt-1">Next Yearly Reset</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bg-indigo-700 text-white p-3 text-center text-xs select-none">
+    &copy; USA News Stories
+  </footer>
+
+  <script>
+    // Utility functions
+    function formatTime(ms) {
+      if (ms < 0) ms = 0;
+      const totalSeconds = Math.floor(ms / 1000);
+      const hours = Math.floor(totalSeconds / 3600)
+        .toString()
+        .padStart(2, "0");
+      const minutes = Math.floor((totalSeconds % 3600) / 60)
+        .toString()
+        .padStart(2, "0");
+      const seconds = (totalSeconds % 60).toString().padStart(2, "0");
+      return `${hours}:${minutes}:${seconds}`;
+    }
+
+    // Global state
+    let tasks = [];
+    let dailyHistory = [];
+    let weeklyHistory = [];
+    let monthlyHistory = [];
+    let yearlyHistory = [];
+
+    let currentDayKey = null;
+    let currentWeekKey = null;
+    let currentMonthKey = null;
+    let currentYearKey = null;
+
+    let dailyResetTime = null;
+    let weeklyResetTime = null;
+    let monthlyResetTime = null;
+    let yearlyResetTime = null;
+
+    // Elements
+    const taskForm = document.getElementById("taskForm");
+    const taskNameInput = document.getElementById("taskName");
+    const taskCreditSelect = document.getElementById("taskCredit");
+    const taskList = document.getElementById("taskList");
+    const taskCompleteList = document.getElementById("taskCompleteList");
+    const totalCreditsAssignedEl = document.getElementById("totalCreditsAssigned");
+    const tasksCountEl = document.getElementById("tasksCount");
+    const creditsEarnedTodayEl = document.getElementById("creditsEarnedToday");
+    const creditsPossibleTodayEl = document.getElementById("creditsPossibleToday");
+    const endDayBtn = document.getElementById("endDayBtn");
+    const weeklyCreditsEarnedEl = document.getElementById("weeklyCreditsEarned");
+    const weeklyCreditsPossibleEl = document.getElementById("weeklyCreditsPossible");
+    const monthlyCreditsEarnedEl = document.getElementById("monthlyCreditsEarned");
+    const monthlyCreditsPossibleEl = document.getElementById("monthlyCreditsPossible");
+    const yearlyCreditsEarnedEl = document.getElementById("yearlyCreditsEarned");
+    const yearlyCreditsPossibleEl = document.getElementById("yearlyCreditsPossible");
+    const dailyCreditsEarnedEl = document.getElementById("dailyCreditsEarned");
+    const dailyCreditsPossibleEl = document.getElementById("dailyCreditsPossible");
+    const totalCreditsEarnedEl = document.getElementById("totalCreditsEarned");
+    const daysPassedEl = document.getElementById("daysPassed");
+    const dailyTimerEl = document.getElementById("dailyTimer");
+    const weeklyTimerEl = document.getElementById("weeklyTimer");
+    const monthlyTimerEl = document.getElementById("monthlyTimer");
+    const yearlyTimerEl = document.getElementById("yearlyTimer");
+    const resetHistoryBtn = document.getElementById("resetHistoryBtn");
+
+    // Initialize on load
+    window.addEventListener("load", () => {
+      loadData();
+      renderAll();
+      setInterval(() => {
+        updateTimers();
+        checkAndPerformResets();
+      }, 1000);
+    });
+
+    // Load data from localStorage
+    function loadData() {
+      tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+      dailyHistory = JSON.parse(localStorage.getItem("dailyHistory")) || [];
+      weeklyHistory = JSON.parse(localStorage.getItem("weeklyHistory")) || [];
+      monthlyHistory = JSON.parse(localStorage.getItem("monthlyHistory")) || [];
+      yearlyHistory = JSON.parse(localStorage.getItem("yearlyHistory")) || [];
+
+      const now = new Date();
+      currentDayKey = formatDate(now);
+      currentWeekKey = formatWeekKey(now);
+      currentMonthKey = formatMonthKey(now);
+      currentYearKey = formatYearKey(now);
+
+      let lastReset = localStorage.getItem("lastReset");
+      if (!lastReset) {
+        lastReset = startOfDay(now);
+        localStorage.setItem("lastReset", lastReset.toISOString());
+      } else {
+        lastReset = new Date(lastReset);
+      }
+      let lastWeeklyReset = localStorage.getItem("lastWeeklyReset");
+      if (!lastWeeklyReset) {
+        lastWeeklyReset = startOfWeek(now);
+        localStorage.setItem("lastWeeklyReset", lastWeeklyReset.toISOString());
+      } else {
+        lastWeeklyReset = new Date(lastWeeklyReset);
+      }
+      let lastMonthlyReset = localStorage.getItem("lastMonthlyReset");
+      if (!lastMonthlyReset) {
+        lastMonthlyReset = startOfMonth(now);
+        localStorage.setItem("lastMonthlyReset", lastMonthlyReset.toISOString());
+      } else {
+        lastMonthlyReset = new Date(lastMonthlyReset);
+      }
+      let lastYearlyReset = localStorage.getItem("lastYearlyReset");
+      if (!lastYearlyReset) {
+        lastYearlyReset = startOfYear(now);
+        localStorage.setItem("lastYearlyReset", lastYearlyReset.toISOString());
+      } else {
+        lastYearlyReset = new Date(lastYearlyReset);
+      }
+
+      dailyResetTime = new Date(lastReset.getTime() + 24 * 60 * 60 * 1000);
+
+      // Fix weeklyResetTime to next Monday 00:00:00 local time
+      weeklyResetTime = getNextMondayAtMidnight(now);
+
+      monthlyResetTime = new Date(lastMonthlyReset.getFullYear(), lastMonthlyReset.getMonth() + 1, 1);
+      yearlyResetTime = new Date(lastYearlyReset.getFullYear() + 1, 0, 1);
+
+      checkAndPerformResets();
+    }
+
+    // Get next Monday 00:00:00 local time from given date
+    function getNextMondayAtMidnight(date) {
+      const day = date.getDay();
+      // Calculate days until next Monday
+      const daysUntilMonday = (8 - day) % 7 || 7;
+      const nextMonday = new Date(date);
+      nextMonday.setHours(0, 0, 0, 0);
+      nextMonday.setDate(nextMonday.getDate() + daysUntilMonday);
+      return nextMonday;
+    }
+
+    // Save data to localStorage
+    function saveData() {
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+      localStorage.setItem("dailyHistory", JSON.stringify(dailyHistory));
+      localStorage.setItem("weeklyHistory", JSON.stringify(weeklyHistory));
+      localStorage.setItem("monthlyHistory", JSON.stringify(monthlyHistory));
+      localStorage.setItem("yearlyHistory", JSON.stringify(yearlyHistory));
+    }
+
+    // Get start of day for a date (local time)
+    function startOfDay(date) {
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    }
+    // Get start of week (Monday) for a date (local time)
+    function startOfWeek(date) {
+      const day = date.getDay();
+      const diff = (day === 0 ? -6 : 1) - day;
+      const monday = new Date(date);
+      monday.setDate(date.getDate() + diff);
+      monday.setHours(0, 0, 0, 0);
+      return monday;
+    }
+    // Get start of month for a date (local time)
+    function startOfMonth(date) {
+      return new Date(date.getFullYear(), date.getMonth(), 1);
+    }
+    // Get start of year for a date (local time)
+    function startOfYear(date) {
+      return new Date(date.getFullYear(), 0, 1);
+    }
+
+    // Format date as yyyy-mm-dd
+    function formatDate(date) {
+      return date.toISOString().slice(0, 10);
+    }
+
+    // Format week key as yyyy-Www (ISO week)
+    function formatWeekKey(date) {
+      const target = new Date(date.valueOf());
+      const dayNr = (date.getDay() + 6) % 7;
+      target.setDate(target.getDate() - dayNr + 3);
+      const firstThursday = target.valueOf();
+      target.setMonth(0, 1);
+      if (target.getDay() !== 4) {
+        target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
+      }
+      const weekNumber = 1 + Math.ceil((firstThursday - target) / 604800000);
+      return `${date.getFullYear()}-W${weekNumber.toString().padStart(2, "0")}`;
+    }
+
+    // Format month key as yyyy-mm
+    function formatMonthKey(date) {
+      return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, "0")}`;
+    }
+
+    // Format year key as yyyy
+    function formatYearKey(date) {
+      return `${date.getFullYear()}`;
+    }
+
+    // Check and perform resets if time passed
+    function checkAndPerformResets() {
+      const now = new Date();
+
+      if (now >= dailyResetTime) {
+        performDailyReset();
+        dailyResetTime = new Date(dailyResetTime.getTime() + 24 * 60 * 60 * 1000);
+        localStorage.setItem("lastReset", new Date(dailyResetTime.getTime() - 24 * 60 * 60 * 1000).toISOString());
+      }
+
+      if (now >= weeklyResetTime) {
+        performWeeklyReset();
+        weeklyResetTime = getNextMondayAtMidnight(weeklyResetTime);
+        localStorage.setItem("lastWeeklyReset", new Date(weeklyResetTime.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString());
+      }
+
+      if (now >= monthlyResetTime) {
+        performMonthlyReset();
+        monthlyResetTime = new Date(monthlyResetTime.getFullYear(), monthlyResetTime.getMonth() + 1, 1);
+        localStorage.setItem("lastMonthlyReset", new Date(monthlyResetTime.getFullYear(), monthlyResetTime.getMonth(), 0).toISOString());
+      }
+
+      if (now >= yearlyResetTime) {
+        performYearlyReset();
+        yearlyResetTime = new Date(yearlyResetTime.getFullYear() + 1, 0, 1);
+        localStorage.setItem("lastYearlyReset", new Date(yearlyResetTime.getFullYear() - 1, 11, 31).toISOString());
+      }
+    }
+
+    // Perform daily reset and add earned credits to dailyHistory
+    function performDailyReset() {
+      const earned = tasks.reduce((a, t) => a + (t.completed ? t.credit : 0), 0);
+      const total = tasks.reduce((a, t) => a + t.credit, 0);
+
+      const todayEntryIndex = dailyHistory.findIndex((d) => d.date === currentDayKey);
+      if (todayEntryIndex === -1) {
+        dailyHistory.push({
+          date: currentDayKey,
+          tasks: tasks.map((t) => ({ id: t.id, name: t.name, credit: t.credit })),
+          earnedCredits: earned,
+          totalCredits: total,
+        });
+      } else {
+        dailyHistory[todayEntryIndex].earnedCredits = earned;
+        dailyHistory[todayEntryIndex].totalCredits = total;
+        dailyHistory[todayEntryIndex].tasks = tasks.map((t) => ({ id: t.id, name: t.name, credit: t.credit }));
+      }
+      saveData();
+
+      tasks.forEach((t) => (t.completed = false));
+      saveData();
+
+      const now = new Date();
+      currentDayKey = formatDate(now);
+
+      renderAll();
+    }
+
+    // Perform weekly reset and add earned credits to weeklyHistory
+    function performWeeklyReset() {
+      const now = new Date();
+      const weekStart = startOfWeek(now);
+      const weekKey = formatWeekKey(weekStart);
+
+      const weekDays = dailyHistory.filter((d) => {
+        const dDate = new Date(d.date + "T00:00:00");
+        return dDate >= weekStart && dDate < new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+      });
+
+      const earned = weekDays.reduce((a, d) => a + (d.earnedCredits || 0), 0);
+      const possible = weekDays.reduce((a, d) => a + (d.totalCredits || 0), 0);
+
+      const idx = weeklyHistory.findIndex((w) => w.week === weekKey);
+      if (idx === -1) {
+        weeklyHistory.push({ week: weekKey, earnedCredits: earned, totalCredits: possible });
+      } else {
+        weeklyHistory[idx].earnedCredits = earned;
+        weeklyHistory[idx].totalCredits = possible;
+      }
+      saveData();
+
+      currentWeekKey = formatWeekKey(now);
+
+      updateSummary();
+    }
+
+    // Perform monthly reset and add earned credits to monthlyHistory
+    function performMonthlyReset() {
+      const now = new Date();
+      const monthStart = startOfMonth(now);
+      const monthKey = formatMonthKey(monthStart);
+
+      const monthDays = dailyHistory.filter((d) => {
+        const dDate = new Date(d.date + "T00:00:00");
+        return dDate >= monthStart && dDate < new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 1);
+      });
+
+      const earned = monthDays.reduce((a, d) => a + (d.earnedCredits || 0), 0);
+      const possible = monthDays.reduce((a, d) => a + (d.totalCredits || 0), 0);
+
+      const idx = monthlyHistory.findIndex((m) => m.month === monthKey);
+      if (idx === -1) {
+        monthlyHistory.push({ month: monthKey, earnedCredits: earned, totalCredits: possible });
+      } else {
+        monthlyHistory[idx].earnedCredits = earned;
+        monthlyHistory[idx].totalCredits = possible;
+      }
+      saveData();
+
+      currentMonthKey = formatMonthKey(now);
+
+      updateSummary();
+    }
+
+    // Perform yearly reset and add earned credits to yearlyHistory
+    function performYearlyReset() {
+      const now = new Date();
+      const yearStart = startOfYear(now);
+      const yearKey = formatYearKey(yearStart);
+
+      const yearDays = dailyHistory.filter((d) => {
+        const dDate = new Date(d.date + "T00:00:00");
+        return dDate >= yearStart && dDate < new Date(yearStart.getFullYear() + 1, 0, 1);
+      });
+
+      const earned = yearDays.reduce((a, d) => a + (d.earnedCredits || 0), 0);
+      const possible = yearDays.reduce((a, d) => a + (d.totalCredits || 0), 0);
+
+      const idx = yearlyHistory.findIndex((y) => y.year === yearKey);
+      if (idx === -1) {
+        yearlyHistory.push({ year: yearKey, earnedCredits: earned, totalCredits: possible });
+      } else {
+        yearlyHistory[idx].earnedCredits = earned;
+        yearlyHistory[idx].totalCredits = possible;
+      }
+      saveData();
+
+      currentYearKey = formatYearKey(now);
+
+      updateSummary();
+    }
+
+    // Render tasks in Today's Tasks section
+    function renderTasks() {
+      taskList.innerHTML = "";
+      tasks.forEach((task) => {
+        const li = document.createElement("li");
+        li.className = "flex justify-between items-center py-2 text-sm";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = task.name;
+        const creditSpan = document.createElement("span");
+        creditSpan.textContent = `${task.credit} credits`;
+        creditSpan.className = "text-indigo-600 font-semibold";
+        li.appendChild(nameSpan);
+        li.appendChild(creditSpan);
+        taskList.appendChild(li);
+      });
+      totalCreditsAssignedEl.textContent = tasks.reduce((a, t) => a + t.credit, 0);
+      tasksCountEl.textContent = tasks.length;
+    }
+
+    // Render tasks in Mark Tasks Completed section with checkboxes
+    function renderTaskCompleteList() {
+      taskCompleteList.innerHTML = "";
+      tasks.forEach((task) => {
+        const li = document.createElement("li");
+        li.className = "flex items-center justify-between py-2 text-sm";
+
+        const label = document.createElement("label");
+        label.className = "flex items-center gap-3 cursor-pointer w-full";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = !!task.completed;
+        checkbox.className = "form-checkbox h-5 w-5 text-indigo-600";
+        checkbox.addEventListener("change", () => {
+          task.completed = checkbox.checked;
+          saveData();
+          updateCreditsEarnedToday();
+          renderTaskCompleteList();
+        });
+
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = task.name;
+        nameSpan.className = checkbox.checked ? "line-through text-gray-400" : "";
+
+        label.appendChild(checkbox);
+        label.appendChild(nameSpan);
+
+        const creditSpan = document.createElement("span");
+        creditSpan.textContent = `${task.credit} credits`;
+        creditSpan.className = "text-indigo-600 font-semibold";
+
+        li.appendChild(label);
+        li.appendChild(creditSpan);
+
+        taskCompleteList.appendChild(li);
+      });
+      updateCreditsEarnedToday();
+    }
+
+    // Update credits earned today display
+    function updateCreditsEarnedToday() {
+      const earned = tasks.reduce((a, t) => a + (t.completed ? t.credit : 0), 0);
+      const possible = tasks.reduce((a, t) => a + t.credit, 0);
+      creditsEarnedTodayEl.textContent = earned;
+      creditsPossibleTodayEl.textContent = possible;
+    }
+
+    // Update summary section
+    function updateSummary() {
+      const dailyEntry = dailyHistory.find((d) => d.date === currentDayKey);
+      const dailyEarned = dailyEntry ? dailyEntry.earnedCredits : 0;
+      const dailyPossible = dailyEntry ? dailyEntry.totalCredits : 0;
+      dailyCreditsEarnedEl.textContent = dailyEarned;
+      dailyCreditsPossibleEl.textContent = `/ ${dailyPossible} possible`;
+
+      const weeklyEntry = weeklyHistory.find((w) => w.week === currentWeekKey);
+      const weeklyEarned = weeklyEntry ? weeklyEntry.earnedCredits : 0;
+      const weeklyPossible = weeklyEntry ? weeklyEntry.totalCredits : 0;
+      weeklyCreditsEarnedEl.textContent = weeklyEarned;
+      weeklyCreditsPossibleEl.textContent = `/ ${weeklyPossible} possible`;
+
+      const monthlyEntry = monthlyHistory.find((m) => m.month === currentMonthKey);
+      const monthlyEarned = monthlyEntry ? monthlyEntry.earnedCredits : 0;
+      const monthlyPossible = monthlyEntry ? monthlyEntry.totalCredits : 0;
+      monthlyCreditsEarnedEl.textContent = monthlyEarned;
+      monthlyCreditsPossibleEl.textContent = `/ ${monthlyPossible} possible`;
+
+      const yearlyEntry = yearlyHistory.find((y) => y.year === currentYearKey);
+      const yearlyEarned = yearlyEntry ? yearlyEntry.earnedCredits : 0;
+      const yearlyPossible = yearlyEntry ? yearlyEntry.totalCredits : 0;
+      yearlyCreditsEarnedEl.textContent = yearlyEarned;
+      yearlyCreditsPossibleEl.textContent = `/ ${yearlyPossible} possible`;
+
+      const totalEarned = dailyHistory.reduce((a, d) => a + (d.earnedCredits || 0), 0);
+      totalCreditsEarnedEl.textContent = totalEarned;
+
+      const uniqueDays = dailyHistory.length;
+      daysPassedEl.textContent = `${uniqueDays} day${uniqueDays !== 1 ? 's' : ''} passed`;
+    }
+
+    // Update timers for next resets and trigger resets if timer reaches zero
+    function updateTimers() {
+      const now = new Date();
+
+      const dailyDiff = dailyResetTime - now;
+      const weeklyDiff = weeklyResetTime - now;
+      const monthlyDiff = monthlyResetTime - now;
+      const yearlyDiff = yearlyResetTime - now;
+
+      dailyTimerEl.textContent = formatTime(dailyDiff);
+      weeklyTimerEl.textContent = formatTime(weeklyDiff);
+      monthlyTimerEl.textContent = formatTime(monthlyDiff);
+      yearlyTimerEl.textContent = formatTime(yearlyDiff);
+
+      // If timer reaches zero or below, perform reset and update summary immediately
+      if (dailyDiff <= 0) {
+        performDailyReset();
+        dailyResetTime = new Date(dailyResetTime.getTime() + 24 * 60 * 60 * 1000);
+        localStorage.setItem("lastReset", new Date(dailyResetTime.getTime() - 24 * 60 * 60 * 1000).toISOString());
+      }
+      if (weeklyDiff <= 0) {
+        performWeeklyReset();
+        weeklyResetTime = getNextMondayAtMidnight(weeklyResetTime);
+        localStorage.setItem("lastWeeklyReset", new Date(weeklyResetTime.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString());
+      }
+      if (monthlyDiff <= 0) {
+        performMonthlyReset();
+        monthlyResetTime = new Date(monthlyResetTime.getFullYear(), monthlyResetTime.getMonth() + 1, 1);
+        localStorage.setItem("lastMonthlyReset", new Date(monthlyResetTime.getFullYear(), monthlyResetTime.getMonth(), 0).toISOString());
+      }
+      if (yearlyDiff <= 0) {
+        performYearlyReset();
+        yearlyResetTime = new Date(yearlyResetTime.getFullYear() + 1, 0, 1);
+        localStorage.setItem("lastYearlyReset", new Date(yearlyResetTime.getFullYear() - 1, 11, 31).toISOString());
+      }
+    }
+
+    // Add new task handler
+    taskForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = taskNameInput.value.trim();
+      const credit = parseInt(taskCreditSelect.value, 10);
+
+      if (!name || isNaN(credit)) return;
+
+      if (credit === 50 && tasks.some((t) => t.credit === 50)) {
+        alert("You can add only one task with 50 credits.");
+        return;
+      }
+
+      const newTask = {
+        id: Date.now().toString(),
+        name,
+        credit,
+        completed: false,
+      };
+
+      tasks.push(newTask);
+      saveData();
+
+      taskNameInput.value = "";
+      taskCreditSelect.value = "";
+
+      renderAll();
+    });
+
+    // End day button handler
+    endDayBtn.addEventListener("click", () => {
+      const earned = tasks.reduce((a, t) => a + (t.completed ? t.credit : 0), 0);
+      const total = tasks.reduce((a, t) => a + t.credit, 0);
+
+      const todayEntryIndex = dailyHistory.findIndex((d) => d.date === currentDayKey);
+      if (todayEntryIndex === -1) {
+        dailyHistory.push({
+          date: currentDayKey,
+          tasks: tasks.map((t) => ({ id: t.id, name: t.name, credit: t.credit })),
+          earnedCredits: earned,
+          totalCredits: total,
+        });
+      } else {
+        dailyHistory[todayEntryIndex].earnedCredits = earned;
+        dailyHistory[todayEntryIndex].totalCredits = total;
+        dailyHistory[todayEntryIndex].tasks = tasks.map((t) => ({ id: t.id, name: t.name, credit: t.credit }));
+      }
+      saveData();
+
+      tasks.forEach((t) => (t.completed = false));
+      saveData();
+
+      renderAll();
+
+      alert("Day ended and credits saved.");
+    });
+
+    // Render all UI parts
+    function renderAll() {
+      renderTasks();
+      renderTaskCompleteList();
+      updateSummary();
+      updateTimers();
+    }
+
+    // Reset history and tasks handler
+    resetHistoryBtn.addEventListener("click", () => {
+      if (confirm("Are you sure you want to reset all tasks and history? This action cannot be undone.")) {
+        tasks = [];
+        dailyHistory = [];
+        weeklyHistory = [];
+        monthlyHistory = [];
+        yearlyHistory = [];
+
+        const now = new Date();
+        currentDayKey = formatDate(now);
+        currentWeekKey = formatWeekKey(now);
+        currentMonthKey = formatMonthKey(now);
+        currentYearKey = formatYearKey(now);
+
+        dailyResetTime = new Date(startOfDay(now).getTime() + 24 * 60 * 60 * 1000);
+        weeklyResetTime = getNextMondayAtMidnight(now);
+        monthlyResetTime = new Date(startOfMonth(now).getFullYear(), startOfMonth(now).getMonth() + 1, 1);
+        yearlyResetTime = new Date(startOfYear(now).getFullYear() + 1, 0, 1);
+
+        localStorage.clear();
+
+        saveData();
+
+        renderAll();
+      }
+    });
+  </script>
+</body>
+</html>
